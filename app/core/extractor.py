@@ -1,87 +1,97 @@
 import fitz
 import re
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict
+from collections import defaultdict
 
 
 class Extractor:
-    """A toolbox of precise extraction methods called by config files."""
+    """A toolbox of precise extraction methods. The text extractor uses a robust,
+    line-based sequential parsing model to correctly identify field boundaries."""
 
     @staticmethod
     def _clean_value(value: str) -> str:
-        """Aggressively cleans the extracted value to remove placeholders and artifacts."""
-        if not value:
-            return ""
-        # Remove sequences of underscores or dots
-        cleaned = re.sub(r'[_\.]{2,}', ' ', value)
-        # Remove common junk characters and artifacts from OCR
-        cleaned = re.sub(r'[\(\)\[\]\|]', '', cleaned)
-        # Remove standalone single letters that are likely noise, but keep real single letter values like A, B, etc.
-        # This looks for a single letter surrounded by spaces or at the boundaries of the string.
-        cleaned = re.sub(r'\s+[a-zA-Z]\s+', ' ', f' {cleaned} ')
+        """Aggressively cleans the extracted value."""
+        if not value: return ""
+        # Remove sequences of underscores or dots and surrounding whitespace
+        cleaned = re.sub(r'(\s*[_\.]{2,}\s*)', ' ', value)
+        # Remove common junk characters and artifacts
+        cleaned = re.sub(r'[\(\)\[\]\|:]', '', cleaned)
         # Collapse multiple spaces and strip
         cleaned = re.sub(r'\s+', ' ', cleaned).strip()
         return cleaned
 
-    def find_text_right_of_label(self, page: fitz.Page, label: str, all_labels: List[str], max_distance: int = 400,
-                                 y_tolerance: int = 5, instance: int = 0, **kwargs) -> Optional[Tuple[str, fitz.Rect]]:
+    def find_all_fields_on_page(self, page: fitz.Page, fields_config: List[Dict]) -> List[Dict]:
         """
-        Finds a text label and extracts the value to its right, intelligently stopping at the next label or a large gap.
+        Processes an entire page to find all configured fields using a robust,
+        line-based sequential parsing model with perfected boundary detection.
         """
-        label_instances = page.search_for(label)
-        if not label_instances or len(label_instances) <= instance:
-            return None, None
-
-        label_rect = label_instances[instance]
-
-        # Define a search area to the right of the label
-        search_rect = fitz.Rect(label_rect.x1, label_rect.y0 - y_tolerance, label_rect.x1 + max_distance,
-                                label_rect.y1 + y_tolerance)
-        words = page.get_text("words", clip=search_rect)
+        results = {}
+        all_labels = [f['label'] for f in fields_config]
+        words = page.get_text("words")
         if not words:
-            return "", label_rect
+            return []
 
-        # Sort candidate words by their left coordinate
-        words.sort(key=lambda w: w[0])
+        lines = defaultdict(list)
+        for w in words:
+            lines[round(w[3] / 10.0)].append(w)
 
-        value_words = []
-        last_word_x1 = label_rect.x1
+        for y_key in sorted(lines.keys()):
+            line_words = sorted(lines[y_key], key=lambda w: w[0])
 
-        # Boundary aware logic
-        for word_info in words:
-            word_rect = fitz.Rect(word_info[:4])
-            word_text = word_info[4]
+            i = 0
+            while i < len(line_words):
+                # Multi-word label mtching
+                found_label, matched_word_count = None, 0
+                for label in sorted(all_labels, key=len, reverse=True):
+                    label_words_list = label.split()
+                    if i + len(label_words_list) <= len(line_words):
+                        page_phrase = " ".join(line_words[i + j][4] for j in range(len(label_words_list)))
+                        if page_phrase == label:
+                            found_label, matched_word_count = label, len(label_words_list)
+                            break
 
-            # Stop if the horizontal gap is too large, indicating a new column/field
-            if word_rect.x0 - last_word_x1 > 20 and value_words:
-                break
+                if found_label:
+                    value_words = []
+                    start_index = i + matched_word_count
 
-            # Stop if the current word is the start of another known label
-            is_next_label = False
-            # Create a string from the current word onwards to check for multi-word labels
-            remaining_text_preview = " ".join(w[4] for w in words if w[0] >= word_info[0])
-            for other_label in all_labels:
-                if remaining_text_preview.startswith(other_label) and label != other_label:
-                    is_next_label = True
-                    break
+                    # Boundary detection
+                    for k in range(start_index, len(line_words)):
+                        current_word = line_words[k][4]
 
-            if is_next_label:
-                break  # Stop collecting words if we've hit the next field's label
+                        # Check if the current word is the start of ANY other label
+                        is_next_label = False
+                        for other_label in all_labels:
+                            if current_word == other_label.split()[0]:
+                                # To be sure, check if the full label matches from here
+                                other_label_words = other_label.split()
+                                if k + len(other_label_words) <= len(line_words):
+                                    page_phrase_preview = " ".join(
+                                        line_words[k + j][4] for j in range(len(other_label_words)))
+                                    if page_phrase_preview == other_label:
+                                        is_next_label = True
+                                        break
+                        if is_next_label:
+                            break  # Boundary detected. Stop.
 
-            value_words.append(word_info)
-            last_word_x1 = word_rect.x1
+                        value_words.append(line_words[k])
 
-        if not value_words:
-            return "", label_rect
+                    value_text = self._clean_value(" ".join(w[4] for w in value_words))
+                    field_name = next((f['name'] for f in fields_config if f['label'] == found_label), found_label)
 
-        raw_value_text = " ".join(w[4] for w in value_words)
-        value_text = self._clean_value(raw_value_text)
+                    if value_words:
+                        value_rect = fitz.Rect(value_words[0][:4])
+                        for w in value_words[1:]: value_rect.include_rect(w[:4])
+                    else:
+                        label_rect_end = line_words[i + matched_word_count - 1]
+                        value_rect = fitz.Rect(label_rect_end[2], label_rect_end[1], label_rect_end[2] + 50,
+                                               label_rect_end[3])
 
-        # Create a bounding box for the accurately captured value words
-        final_value_rect = fitz.Rect(value_words[0][:4])
-        for w_info in value_words[1:]:
-            final_value_rect.include_rect(w_info[:4])
+                    results[field_name] = (value_text, value_rect)
+                    i += matched_word_count + len(value_words)
+                else:
+                    i += 1
 
-        return value_text, final_value_rect
+        return [{"name": name, "value": val, "rect": rect} for name, (val, rect) in results.items()]
 
     def find_checkbox_near_label(self, page: fitz.Page, label: str, search_radius: int = 50, instance: int = 0,
                                  **kwargs) -> Tuple[str, fitz.Rect]:
