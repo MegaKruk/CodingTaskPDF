@@ -24,22 +24,37 @@ def highlight_extractions_on_pdf(pdf_path: str, extractions: list) -> bytes:
             try:
                 # Coords are stored as "x0,y0,x1,y1"
                 coords = [float(c) for c in item.source_coordinates.split(',')]
+
+                # Validate coordinates
+                if len(coords) != 4:
+                    continue
+
+                # Check for invalid coordinates (0,0,0,0)
+                if all(c == 0.0 for c in coords):
+                    continue
+
                 rect = fitz.Rect(coords)
+
+                # Validate rect
+                if rect.is_empty or not rect.is_valid:
+                    continue
 
                 # Add a semi-transparent colored highlight based on extraction method.
                 color_map = {
                     "Widget": [0, 0, 1],  # Blue
                     "Table": [0, 1, 0],  # Green
-                    "Heuristic": [1, 1, 0],  # Yellow
+                    "Form Field": [1, 1, 0],  # Yellow
+                    "Label Match": [1, 0.5, 0],  # Orange
+                    "Checkbox Option": [1, 0, 1],  # Magenta
                 }
                 color = color_map.get(item.extraction_method, [1, 0, 0])  # Red for unknown
 
                 highlight = page.add_highlight_annot(rect)
                 highlight.set_colors(stroke=color)
-                highlight.set_info(content=f"Key: {item.key}\nMethod: {item.extraction_method}")
+                highlight.set_info(content=f"Key: {item.key}\nValue: {item.value}\nMethod: {item.extraction_method}")
                 highlight.update()
-            except (ValueError, IndexError):
-                print(f"Could not parse coordinates for highlighting: {item.source_coordinates}")
+            except (ValueError, IndexError, TypeError) as e:
+                print(f"Could not parse coordinates for highlighting: {item.source_coordinates}, Error: {e}")
 
     # Render the page with highlights to a PNG pixmap
     # Higher DPI gives a clearer image
