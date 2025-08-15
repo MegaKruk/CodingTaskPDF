@@ -278,7 +278,17 @@ with tab1:
                                     st.image(
                                         highlighted_image,
                                         caption="Extracted data locations",
-                                        use_column_width=True
+                                        use_container_width=True
+                                    )
+                                    st.markdown(
+                                        """
+                                        **Highlight Legend:**
+                                        - <span style="background-color:rgba(255, 255, 0, 0.3); padding: 2px 5px; border-radius: 3px;">Yellow:</span> Config Field
+                                        - <span style="background-color:rgba(255, 0, 255, 0.3); padding: 2px 5px; border-radius: 3px;">Magenta:</span> Config Checkbox
+                                        - <span style="background-color:rgba(255, 127, 0, 0.3); padding: 2px 5px; border-radius: 3px;">Orange:</span> Dynamic/Heuristic
+                                        - <span style="background-color:rgba(0, 0, 255, 0.3); padding: 2px 5px; border-radius: 3px;">Blue:</span> Widget
+                                        - <span style="background-color:rgba(0, 255, 0, 0.3); padding: 2px 5px; border-radius: 3px;">Green:</span> Table
+                                        """, unsafe_allow_html=True
                                     )
                                 except Exception as e:
                                     st.error(f"Could not generate preview: {str(e)}")

@@ -42,11 +42,21 @@ def highlight_extractions_on_pdf(pdf_path: str, extractions: list) -> bytes:
 
                 # Add a semi-transparent colored highlight based on extraction method.
                 color_map = {
+                    # Config-Based Methods
+                    "Config Field": [1, 1, 0],  # Yellow
+                    "Config Checkbox": [1, 0, 1],  # Magenta
+
+                    # Dynamic/Heuristic Methods
+                    "Dynamic Heuristic": [1, 0.5, 0],  # Orange
+                    "Visual Checkbox": [1, 0.5, 0],  # Orange
+                    "Compound Label": [1, 0.5, 0],  # Orange
+                    "Form Field": [1, 0.5, 0],  # Orange (Used by your dynamic extractor)
+                    "Label Match": [1, 0.5, 0],  # Orange
+                    "Checkbox Option": [1, 0.5, 0],  # Orange
+
+                    # General High-Reliability Methods
                     "Widget": [0, 0, 1],  # Blue
                     "Table": [0, 1, 0],  # Green
-                    "Form Field": [1, 1, 0],  # Yellow
-                    "Label Match": [1, 0.5, 0],  # Orange
-                    "Checkbox Option": [1, 0, 1],  # Magenta
                 }
                 color = color_map.get(item.extraction_method, [1, 0, 0])  # Red for unknown
 
