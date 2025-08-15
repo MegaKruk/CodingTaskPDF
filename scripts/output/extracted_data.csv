@@ -1,0 +1,2 @@
+file_path,form_type,processing_time,error_count,Surname,Forename(s),Nationality,Tel,Cell,e-mail,Mr,Mrs,Miss,Ms,Male,Female,Married,Single
+Filled Forms\Personal Loan Application Form_filled.pdf,PERSONAL_LOAN_V1,0.1115102767944336,0,Forename,Date,Residential,Postal Address: ________________________________________________________________________,Postal Address: ________________________________________________________________________,Postal Address: ________________________________________________________________________,False,False,False,False,False,False,False,False

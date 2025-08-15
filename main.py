@@ -5,11 +5,11 @@ from app.db.database import SessionLocal, init_db
 from app.db import crud
 from app.core.config_manager import ConfigManager
 from app.core.document_processor import DocumentProcessor
-from app.utils.pdf_highlighter import highlight_extractions_on_pdf
+from app.utils.utils import highlight_extractions_on_pdf
 
 # App Configuration
 st.set_page_config(
-    page_title="PDF Data Extractor Pro",
+    page_title="PDF Data Extractor Pro 3000",
     page_icon="🚀",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -77,7 +77,7 @@ if 'last_processed' not in st.session_state:
     st.session_state.last_processed = []
 
 # Header
-st.markdown('<h1 class="main-header">🚀 PDF Data Extractor Pro</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🚀 PDF Data Extractor Pro 3000</h1>', unsafe_allow_html=True)
 st.markdown("**Advanced document processing with intelligent data extraction**")
 st.markdown("---")
 
@@ -373,7 +373,7 @@ with tab3:
         st.caption(f"**Database Status:** Connected")
 
 with tab4:
-    st.header("ℹ️ About PDF Data Extractor Pro")
+    st.header("ℹ️ About PDF Data Extractor Pro 3000")
 
     st.markdown("""
     ### Features
@@ -384,7 +384,7 @@ with tab4:
     - High accuracy and speed
 
     **🤖 Flexible Extraction Mode**
-    - AI-powered dynamic extraction
+    - Dynamic extraction based on heuristics
     - Works with any PDF form
     - Automatic field detection
 
@@ -415,5 +415,5 @@ with tab4:
     """)
 
     st.markdown("---")
-    st.caption("PDF Data Extractor Pro v1.0 - Intelligent Document Processing")
+    st.caption("PDF Data Extractor Pro 3000 v1.0 - Intelligent Document Processing")
     st.caption("Designed for scalability, accuracy, and ease of use")

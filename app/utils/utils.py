@@ -1,4 +1,5 @@
 import fitz
+import re
 
 
 def highlight_extractions_on_pdf(pdf_path: str, extractions: list) -> bytes:
@@ -63,3 +64,27 @@ def highlight_extractions_on_pdf(pdf_path: str, extractions: list) -> bytes:
 
     doc.close()
     return img_bytes
+
+
+def clean_value(value: str) -> str:
+    """Aggressively cleans the extracted value to remove placeholders and artifacts."""
+    if not value:
+        return ""
+    # Remove any sequence of 2 or more underscores or dots
+    cleaned = re.sub(r'[_\.]{2,}', ' ', value)
+    # Remove common junk characters and artifacts from OCR
+    cleaned = re.sub(r'[\(\)\[\]\|:]', '', cleaned)
+    # Remove standalone single letters that are likely noise
+    cleaned = re.sub(r'\b[a-zA-Z]\b', '', cleaned)
+    # Collapse multiple spaces and strip
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned
+
+
+def clean_text(text: str) -> str:
+    """Standardizes text for KEYS by cleaning and formatting."""
+    if not text: return ""
+    # Remove underscores and dots used for form lines
+    cleaned = re.sub(r'[_\.]{3,}', '', text)
+    cleaned = cleaned.strip().strip(":").strip()
+    return cleaned

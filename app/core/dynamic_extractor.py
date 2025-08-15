@@ -1,7 +1,7 @@
-import fitz
 import re
-import math
 from typing import List, Dict, Any
+import fitz
+from app.utils.utils import clean_value, clean_text
 
 
 class DynamicExtractor:
@@ -9,23 +9,6 @@ class DynamicExtractor:
     Extracts data from PDFs using a re-engineered, spatially-aware engine.
     This version correctly handles complex layouts, visual checkboxes, and multi-column forms.
     """
-
-    def _clean_text(self, text: str) -> str:
-        """Standardizes text for KEYS by cleaning and formatting."""
-        if not text: return ""
-        # Remove underscores and dots used for form lines
-        cleaned = re.sub(r'[_\.]{3,}', '', text)
-        cleaned = cleaned.strip().strip(":").strip()
-        return cleaned
-
-    def _clean_value(self, value: str) -> str:
-        """Standardizes text for VALUES by removing common PDF form placeholders."""
-        if not value: return ""
-        # Remove form fill lines (underscores, dots) - be more aggressive
-        cleaned_value = re.sub(r'[_\.]{3,}', '', value)
-        # Remove excessive whitespace
-        cleaned_value = re.sub(r'\s{2,}', ' ', cleaned_value).strip()
-        return cleaned_value
 
     def _is_form_fill_line(self, text: str) -> bool:
         """Check if text is just form fill lines (underscores, dots)."""
@@ -246,7 +229,7 @@ class DynamicExtractor:
         for widget in page.widgets():
             if not widget.field_name:
                 continue
-            key = self._clean_text(widget.field_name)
+            key = clean_text(widget.field_name)
 
             if widget.field_type == fitz.PDF_WIDGET_TYPE_CHECKBOX:
                 value = "Checked" if widget.field_value != "Off" else "Not checked"
@@ -255,7 +238,7 @@ class DynamicExtractor:
                 value = "Checked" if widget.field_value != "Off" else "Not checked"
                 key = f"{key} (checkbox)"
             else:
-                value = self._clean_value(widget.field_value if widget.field_value else "")
+                value = clean_value(widget.field_value if widget.field_value else "")
 
             if value:
                 coords_str = f"{widget.rect.x0:.1f},{widget.rect.y0:.1f},{widget.rect.x1:.1f},{widget.rect.y1:.1f}"
@@ -279,11 +262,11 @@ class DynamicExtractor:
                     if not table_data or len(table_data) < 2:
                         continue
 
-                    header = [self._clean_text(h) for h in table_data[0] if h]
+                    header = [clean_text(h) for h in table_data[0] if h]
                     for row_idx, row in enumerate(table_data[1:]):
                         for col_idx, cell_value in enumerate(row):
                             if cell_value and col_idx < len(header) and header[col_idx]:
-                                value = self._clean_value(str(cell_value))
+                                value = clean_value(str(cell_value))
                                 if value and not self._is_form_fill_line(value):
                                     key = f"Table {i + 1} - {header[col_idx]}"
                                     cell_bbox = table.get_cell_bbox((row_idx + 1, col_idx))
@@ -351,7 +334,7 @@ class DynamicExtractor:
             word_rect = fitz.Rect(word[:4])
 
             if word_text.endswith(':') and len(word_text) > 1:
-                key = self._clean_text(word_text)
+                key = clean_text(word_text)
 
                 if key and key not in processed_keys and not key.isdigit():
                     value = self._find_value_for_label(word_rect, all_words, processed_indices)

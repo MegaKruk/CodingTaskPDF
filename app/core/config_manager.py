@@ -1,6 +1,6 @@
 import os
+from typing import Dict, Any
 import yaml
-from typing import List, Dict, Any
 
 
 class ConfigManager:
