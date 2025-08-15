@@ -1,4 +1,3 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -8,8 +7,6 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 DATABASE_URL = "sqlite:///app.db"
 
 # Create the SQLAlchemy engine.
-# connect_args is needed for SQLite to handle multi-threaded access,
-# which is common in web apps like Streamlit.
 engine = create_engine(
     DATABASE_URL, connect_args={"check_same_thread": False}
 )
@@ -25,7 +22,6 @@ def init_db():
     Initializes the database by creating all tables defined in the models.
     This function should be called once at the start of the application.
     """
-    # Import all models here before calling create_all
-    # to ensure they are registered with the Base metadata.
+    # Import all models here before calling create_all to ensure they are registered with the Base metadata.
     from app.db.models import Document, ExtractedData
     Base.metadata.create_all(bind=engine)

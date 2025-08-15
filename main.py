@@ -7,6 +7,7 @@ from app.core.config_manager import ConfigManager
 from app.core.document_processor import DocumentProcessor
 from app.utils.utils import highlight_extractions_on_pdf
 
+
 # App Configuration
 st.set_page_config(
     page_title="PDF Data Extractor Pro 3000",

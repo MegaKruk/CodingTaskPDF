@@ -5,8 +5,6 @@ from app.utils.utils import clean_value
 class Extractor:
     """A toolbox of precise, proximity-aware extraction methods called by config files."""
 
-
-
     @staticmethod
     def _get_rect_center(rect: fitz.Rect) -> fitz.Point:
         """Correctly calculates the center point of a fitz.Rect object."""
