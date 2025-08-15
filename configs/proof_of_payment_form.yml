@@ -1,0 +1,19 @@
+form_type: "PROOF_OF_PAYMENT_V1"
+identification_string: "PROOF OF PAYMENT REQUEST FORM"
+
+data_elements:
+  fields:
+    - name: "Date"
+      label: "DATE"
+    - name: "Customer Name"
+      label: "CUSTOMER NAME"
+    - name: "ID Number"
+      label: "ID NUMBER"
+    - name: "Contact Number"
+      label: "CONTACT NUMBER"
+    - name: "Email Address"
+      label: "EMAIL ADDRESS"
+    - name: "Account Number"
+      label: "ACCOUNT NUMBER"
+    - name: "Branch Name"
+      label: "BRANCH NAME"
